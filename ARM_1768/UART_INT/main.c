@@ -29,23 +29,19 @@ controller (see Table 544).
 											|							|->100MHz
 											|
 											|-> 400MHz 
-
 PLL0 is configured for Core Clock
 PLL0CON 	BIT[14:0]		MSEL(M) For cal M = M + 1
 					BIT[23:16]	Pre-Div(N)	For Cal N = N + 1
-
 Fcco = (2 * M * Fin)/N			
 "From startup file"
 M = 0x63 => 99 in DEC so M = 99 + 1 = 100
 N = 0x05 => 5 in DEC so N = 5 + 1 = 6
 Fin = external clock = 12MHz
 Fcco = 400MHz
-
 CPU Clock Configuration register (CCLKCFG)
 BIT[7:0] 		CCLKSEL 	Selects the divide value for creating the CPU clock (CCLK)
 											from the PLL0 output.
 		3 								pllclk is divided by 4 to produce the CPU clock
-
 */
 
 /*
