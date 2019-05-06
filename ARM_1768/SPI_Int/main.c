@@ -55,17 +55,26 @@ void delay(unsigned long time)
 }
 
 //IRQ variable
-volatile int val = 0;
+volatile int val = 0x0f;
 
 int main()
 {
 	initSPI();
+	//LPC_SPI->SPSR |= (1<<7);
+	//LPC_SPI->SPINT |= (1<<0);
+	//LPC_SPI->SPDR = 0x01;
 	NVIC_EnableIRQ(SPI_IRQn);//Enable Spi interrupt in NVIC
+	
 	while(1)
 	{
-		LPC_GPIO0->FIOSET|=(1<<16);
-		LPC_SPI->SPDR= val++;
-		LPC_GPIO0->FIOCLR|=(1<<16);
+		//LPC_SPI->SPDR= val++;
+		LPC_SPI->SPDR = 0x50;
+		delay(1000);
+		//LPC_SPI->SPDR = 0x00;
+		LPC_SPI->SPDR = 0xf0;
+		//LPC_SPI->SPDR = 0x00;
+		delay(1000);
+		//LPC_SPI->SPINT |= (1<<0);
 		if(val>=7)
 		{
 			val = 0;
@@ -148,6 +157,11 @@ void sendData(char data)
 
 void SPI_IRQHandler()
 {
+	//Clear Interrupt
+	//LPC_SPI->SPINT |= (1<<0);
+	LPC_GPIO0->FIOSET2 |=(1<<0);
+	LPC_SPI->SPDR = val;
+	//LPC_SPI->SPDR = 0x00;
+	LPC_GPIO0->FIOCLR2 |=(1<<0);
 	LPC_SPI->SPINT |= (1<<0);
-	val = LPC_SPI->SPDR;
 }
