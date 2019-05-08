@@ -1,7 +1,6 @@
 #include "LPC17xx.h"
 #include <stdio.h>
 #include <string.h>
-#include "lcd.h"
 /***********************************************************************************************************************
 Externel Clk ==> System Clk (CCLK)==> PCLK_ADC	==> ADC CLKDIV(Clk/1)
 12MHz							|-> 100MHz					|-> 25MHz					
@@ -92,35 +91,22 @@ return : int result of adc
 */
 int getAdcResult(void);
 
+volatile int adcIntBuf = 0;
 
 int main()
 {
 	int adc = 0;
 	initADC();
-	init_lcd();
 	uartInit3();
 	sendString("ADC\r\n");
-	
-	send_cmd(0x80);
-	unsigned char data[] = "LCD INIT";
-	user_string(data);
-	for(long int i = 0; i < 60000000; ++i);
-	
 	char buff[32] = { 0 };
-	
-	send_cmd(0x01);// 0000 0001 Clear Display():
-	user_string((unsigned char*)"ADC: ");
-	
 	while(1)
 	{
-		adc = getAdcResult();
-		sprintf(buff,"%d",adc);
-		//sendString(buff);
-		send_cmd(0x84);// 0000 0001 Clear Display():
-		user_string((unsigned char*)buff);
+		adc =  adcIntBuf;
+		sprintf(buff,"ADC Result: %d\r\n",adc);
+		sendString(buff);
 		memset(buff,0,32);
-		for(long int i = 0; i < 6000000; ++i);
-		//send_cmd(0x01);// 0000 0001 Clear Display():
+		for(long int i = 0; i < 600000; ++i);
 	}
 }
 
@@ -166,6 +152,15 @@ void initADC()
 	*/
 	//Stop ADC connvertion
 	LPC_ADC->ADCR |= (0x000<<24);
+	
+	/****INTERRUPT****/
+	/*
+	A/D Interrupt Enable register (AD0INTEN)
+	BIT[2] 		ADINTEN2 		Completion of a conversion on ADC channel 2 will generate an interrupt
+	*/
+	LPC_ADC->ADINTEN |= (1<<2);
+	NVIC_EnableIRQ(ADC_IRQn);
+	/*****************/
 }
 
 int getAdcResult()
@@ -187,6 +182,17 @@ int getAdcResult()
 	return adcRes;
 }
 
+void ADC_IRQHandler()
+{
+	/*
+	A/D Status register (ADSTAT)
+	BIT 16 		ADINT This bit is the A/D interrupt flag
+	*/
+	adcIntBuf = ((LPC_ADC->ADDR2) >> 4) & (0xfff);
+	//Stop ADC connvertion
+	//LPC_ADC->ADCR |= (0x000<<24);
+	
+}
 /*****************************UART**************************/
 /*=========================================================*/
 void uartInit3()
